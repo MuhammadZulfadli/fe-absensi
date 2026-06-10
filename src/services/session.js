@@ -7,6 +7,12 @@ export const sessionService = {
       return response.data;
     } catch (error) {
       console.error('Create session error:', error);
+      if (error.response?.status === 409) {
+        const err = new Error('Sesi untuk mata kuliah ini masih berjalan. Tutup sesi sebelumnya terlebih dahulu.');
+        err.status = 409;
+        err.active_session_id = error.response.data.active_session_id;
+        throw err;
+      }
       throw error.response?.data?.message || 'Gagal membuat sesi baru.';
     }
   },

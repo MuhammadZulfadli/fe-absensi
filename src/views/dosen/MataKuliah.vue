@@ -99,6 +99,7 @@
                     <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Kode</th>
                     <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nama Mata Kuliah</th>
                     <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">SKS</th>
+                    <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">Status Sesi</th>
                     <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">Aksi Sesi</th>
                     <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">Pengaturan</th>
                   </tr>
@@ -119,15 +120,34 @@
                     <!-- SKS (Numeric monospace) -->
                     <td class="px-6 py-3 text-sm text-on-surface font-mono text-center">{{ course.sks }}</td>
                     
+                    <!-- Session Status -->
+                    <td class="px-6 py-3 text-center">
+                      <span v-if="course.sesi_status === 'aktif' || activeSessions[course.id]" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        Sesi Berlangsung
+                      </span>
+                      <span v-else-if="course.sesi_status === 'selesai'" class="inline-flex flex-col items-center">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          Sesi Selesai
+                        </span>
+                        <span v-if="course.sesi_terakhir_at" class="text-[10px] text-gray-500 mt-1">
+                          {{ new Date(course.sesi_terakhir_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) }}
+                        </span>
+                      </span>
+                      <span v-else class="text-xs text-gray-400 italic">
+                        -
+                      </span>
+                    </td>
+                    
                     <!-- Active Actions (Buka Sesi) -->
                     <td class="px-6 py-3 text-center">
                       <button 
+                        v-if="course.sesi_status !== 'aktif' && !activeSessions[course.id]"
                         @click="handleCreateSession(course.id)" 
-                        :disabled="isActionLoading[course.id]"
+                        :disabled="isActionLoading[course.id] || activeSessions[course.id]"
                         class="inline-flex items-center gap-1.5 bg-primary text-white font-semibold text-xs py-1.5 px-3 rounded hover:bg-primary-container transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span v-if="isActionLoading[course.id]" class="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></span>
-                        <span v-else>🟢 Buka Sesi</span>
+                        <span v-else>{{ activeSessions[course.id] ? 'Sesi Aktif' : '🟢 Buka Sesi' }}</span>
                       </button>
                     </td>
 
@@ -293,6 +313,7 @@ const pageSuccess = ref('');
 
 // Action loadings (e.g. key is courseId, value is boolean)
 const isActionLoading = ref({});
+const activeSessions = ref({});
 
 // Modal variables
 const showModal = ref(false);
@@ -414,7 +435,12 @@ const handleCreateSession = async (courseId) => {
       throw new Error('ID sesi tidak ditemukan.');
     }
   } catch (error) {
-    pageError.value = error;
+    if (error.status === 409) {
+      pageError.value = error.message;
+      activeSessions.value[courseId] = true;
+    } else {
+      pageError.value = error.message || error;
+    }
   } finally {
     isActionLoading.value[courseId] = false;
   }
