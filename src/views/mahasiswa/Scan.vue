@@ -1,146 +1,187 @@
 <template>
-  <div class="min-h-screen bg-background flex flex-col font-sans">
-    <!-- Top Header -->
-    <header class="bg-white border-b border-outline-variant/30 px-6 py-4 sticky top-0 z-30">
-      <div class="max-w-(--spacing-max-width) mx-auto flex justify-between items-center">
-        <!-- Logo -->
-        <div class="flex items-center gap-2">
-          <span class="text-primary text-xl">⚡</span>
-          <span class="font-semibold text-lg tracking-tight text-on-background">AttendSync<span class="text-primary font-normal">Web</span></span>
+  <MahasiswaLayout>
+    <div class="card-level-1 p-6 sm:p-8 w-full max-w-lg mx-auto text-center space-y-6">
+      
+      <!-- Card Title & Instructions -->
+      <div>
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3 shadow-xs">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+          </svg>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Pindai Barcode Presensi</h1>
+        <p class="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto mt-1">
+          Arahkan kamera HP/laptop Anda tepat ke layar proyektor dosen untuk mencatat kehadiran.
+        </p>
+      </div>
+
+      <!-- Feedback Alerts -->
+      <div class="space-y-3 text-left">
+        <!-- Camera Error -->
+        <Transition name="fade">
+          <div v-if="cameraError" class="alert-warning text-xs">
+            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div class="flex-grow">
+              <span class="font-bold">Izin Kamera:</span> {{ cameraError }}
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Success Alert -->
+        <Transition name="fade">
+          <div v-if="successMessage" class="alert-success text-xs sm:text-sm">
+            <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="flex-grow">
+              <span class="font-bold">Presensi Berhasil:</span> {{ successMessage }}
+            </div>
+          </div>
+        </Transition>
+
+        <!-- API / Validation Error -->
+        <Transition name="fade">
+          <div v-if="apiError" class="alert-error text-xs sm:text-sm">
+            <svg class="w-5 h-5 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="flex-grow">
+              <span class="font-bold">Gagal Presensi:</span> {{ apiError }}
+            </div>
+          </div>
+        </Transition>
+      </div>
+
+      <!-- Scanner Box -->
+      <div class="bg-slate-900 rounded-2xl p-6 relative overflow-hidden min-h-[300px] flex flex-col items-center justify-center shadow-lg shadow-slate-900/10">
+        
+        <!-- Live Camera Mode -->
+        <div v-if="isScanning && !cameraError && !manualMode" class="relative w-64 h-64 mx-auto bg-black rounded-xl overflow-hidden shadow-inner">
+          <qrcode-stream @detect="onDetect" @error="onCameraError" class="w-full h-full object-cover" />
+          
+          <!-- Corner Focus Markers -->
+          <span class="absolute top-2 left-2 w-7 h-7 border-t-4 border-l-4 border-blue-500 rounded-tl-md z-10"></span>
+          <span class="absolute top-2 right-2 w-7 h-7 border-t-4 border-r-4 border-blue-500 rounded-tr-md z-10"></span>
+          <span class="absolute bottom-2 left-2 w-7 h-7 border-b-4 border-l-4 border-blue-500 rounded-bl-md z-10"></span>
+          <span class="absolute bottom-2 right-2 w-7 h-7 border-b-4 border-r-4 border-blue-500 rounded-br-md z-10"></span>
+          
+          <!-- Scanning Laser Beam -->
+          <div class="absolute left-3 right-3 h-0.5 bg-blue-400 shadow-[0_0_12px_#38bdf8] animate-scan-laser z-10 pointer-events-none"></div>
         </div>
 
-        <!-- User Info & Logout -->
-        <div class="flex items-center gap-4">
-          <div class="text-right hidden sm:block">
-            <div class="font-semibold text-sm text-on-surface">{{ user?.nama }}</div>
-            <div class="text-xs text-on-surface-variant">Mahasiswa &bull; {{ user?.nim_nip }}</div>
+        <!-- Manual Token Entry Mode -->
+        <div v-else-if="manualMode" class="w-full max-w-xs space-y-4 text-white text-left">
+          <div class="text-center">
+            <h3 class="text-sm font-bold text-slate-200">Input Token Manual</h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Masukkan token string barcode dari dosen</p>
           </div>
-          <button @click="handleLogout" class="border border-outline/30 text-on-surface-variant hover:bg-surface-container-low font-medium text-xs py-2 px-4 rounded transition-colors cursor-pointer">
-            Keluar
+          <input
+            type="text"
+            v-model="manualToken"
+            placeholder="Contoh: eyJhbGciOi..."
+            class="input-modern text-xs font-mono py-2 text-slate-900"
+            :disabled="isLoading"
+          />
+          <button
+            @click="handleManualSubmit"
+            :disabled="isLoading || !manualToken.trim()"
+            class="btn-primary w-full py-2.5 text-xs font-bold"
+          >
+            <span v-if="isLoading" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            <span v-else>Kirim Presensi</span>
           </button>
         </div>
-      </div>
-    </header>
 
-    <!-- Content Stage -->
-    <main class="flex-grow max-w-(--spacing-max-width) w-full mx-auto p-gutter flex flex-col items-center justify-center my-6">
-      <div class="bg-white border border-outline-variant/30 shadow-xs rounded-lg p-8 w-full max-w-lg text-center">
-        <h1 class="text-xl font-bold text-on-surface mb-2 tracking-tight">Pindai Barcode Absensi</h1>
-        <p class="text-sm text-on-surface-variant mb-8 max-w-md mx-auto">Silakan arahkan kamera perangkat Anda ke QR Code yang ditampilkan oleh Dosen di depan kelas.</p>
-        
-        <!-- Feedback Alerts -->
-        <div class="space-y-4 mb-6 text-left">
-          <!-- Camera Error -->
-          <div v-if="cameraError" class="bg-error-container/20 border border-error/30 text-error px-4 py-3 rounded flex items-start gap-2.5 text-sm">
-            <span class="mt-0.5">⚠️</span>
-            <div class="flex-grow">
-              <span class="font-bold">Gagal mengakses kamera:</span> {{ cameraError }}
-            </div>
+        <!-- Paused / Result State -->
+        <div v-else class="flex flex-col items-center justify-center p-4 text-center text-white">
+          <div v-if="isLoading" class="flex flex-col items-center gap-3">
+            <div class="w-12 h-12 border-3 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+            <p class="text-sm font-medium text-slate-300">Memverifikasi kode presensi Anda...</p>
           </div>
-
-          <!-- API Success -->
-          <div v-if="successMessage" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded flex items-start gap-2.5 text-sm">
-            <span class="mt-0.5">✅</span>
-            <div class="flex-grow">
-              <span class="font-bold">Berhasil!</span> {{ successMessage }}
+          <div v-else-if="successMessage" class="flex flex-col items-center gap-3">
+            <div class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-          </div>
-
-          <!-- API Error -->
-          <div v-if="apiError" class="bg-error-container/20 border border-error/30 text-error px-4 py-3 rounded flex items-start gap-2.5 text-sm">
-            <span class="mt-0.5">❌</span>
-            <div class="flex-grow">
-              <span class="font-bold">Gagal mencatat absensi:</span> {{ apiError }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Scanner Area -->
-        <div class="bg-surface-container-low border border-dashed border-outline-variant rounded-lg p-8 mb-8 relative overflow-hidden min-h-[300px] flex flex-col justify-center">
-          
-          <!-- Scanning Active -->
-          <div v-if="isScanning && !cameraError" class="relative w-56 h-56 mx-auto bg-black rounded-lg overflow-hidden shadow-xs">
-            <qrcode-stream @detect="onDetect" @error="onCameraError" />
-            
-            <!-- Target Corners -->
-            <span class="absolute top-0 left-0 w-6 h-6 border-t-3 border-l-3 border-primary rounded-tl z-10"></span>
-            <span class="absolute top-0 right-0 w-6 h-6 border-t-3 border-r-3 border-primary rounded-tr z-10"></span>
-            <span class="absolute bottom-0 left-0 w-6 h-6 border-b-3 border-l-3 border-primary rounded-bl z-10"></span>
-            <span class="absolute bottom-0 right-0 w-6 h-6 border-b-3 border-r-3 border-primary rounded-br z-10"></span>
-            
-            <!-- Laser scanning line -->
-            <div class="absolute left-2 right-2 h-0.5 bg-error shadow-[0_0_8px_var(--color-error)] animate-bounce z-10"></div>
-          </div>
-
-          <!-- Scanning Paused (Loading or Success/Error screen) -->
-          <div v-else class="flex flex-col items-center justify-center p-6 text-center">
-            <div v-if="isLoading" class="flex flex-col items-center gap-3">
-              <span class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></span>
-              <p class="text-sm font-medium text-on-surface-variant">Memproses absensi Anda...</p>
-            </div>
-            <div v-else-if="successMessage || apiError || cameraError" class="flex flex-col items-center gap-4">
-              <span class="text-5xl">{{ successMessage ? '🎉' : '❌' }}</span>
-              <button @click="resetScanner" class="bg-primary text-white font-semibold text-sm py-2 px-5 rounded hover:bg-primary-container transition-all shadow-sm cursor-pointer">
+            <p class="text-sm font-bold text-white">Presensi Anda Telah Terekam!</p>
+            <div class="flex items-center gap-2 mt-2">
+              <button @click="resetScanner" class="btn-primary text-xs py-2 px-4 shadow-sm">
                 Pindai Lagi
               </button>
+              <router-link to="/mahasiswa/riwayat" class="btn-secondary text-xs py-2 px-4">
+                Lihat Riwayat &rarr;
+              </router-link>
             </div>
-            <div v-else class="flex flex-col items-center gap-3">
-              <span class="text-4xl opacity-40">📷</span>
-              <p class="text-xs text-on-surface-variant/75 font-medium">Kamera tidak aktif</p>
+          </div>
+          <div v-else-if="apiError || cameraError" class="flex flex-col items-center gap-3">
+            <div class="w-14 h-14 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </div>
+            <p class="text-xs text-slate-300">Presensi gagal atau kamera terhambat</p>
+            <button @click="resetScanner" class="btn-primary text-xs py-2 px-4 mt-2">
+              Coba Pindai Ulang
+            </button>
           </div>
         </div>
 
-        <!-- Navigation Tabs/Links -->
-        <div class="flex justify-center gap-6 border-t border-outline-variant/30 pt-6">
-          <router-link to="/mahasiswa/scan" class="text-sm font-semibold text-primary border-b-2 border-primary pb-2 px-1">Scan Barcode</router-link>
-          <router-link to="/mahasiswa/riwayat" class="text-sm font-medium text-on-surface-variant hover:text-primary pb-2 px-1 transition-colors">Riwayat Absensi</router-link>
-        </div>
       </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-outline-variant/30 py-4 text-center mt-auto">
-      <p class="text-xs text-on-surface-variant/50">&copy; 2026 AttendSync. Hak Cipta Dilindungi.</p>
-    </footer>
-  </div>
+      <!-- Mode Switcher Helper -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-center">
+        <button
+          @click="toggleMode"
+          class="text-xs text-blue-600 hover:text-blue-800 font-semibold hover:underline flex items-center gap-1.5 cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+          </svg>
+          <span>{{ manualMode ? 'Gunakan Pemindai Kamera' : 'Kamera bermasalah? Masukkan Token Manual' }}</span>
+        </button>
+      </div>
+
+    </div>
+  </MahasiswaLayout>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
 import { QrcodeStream } from 'vue-qrcode-reader';
-import authService from '../../services/auth';
+import MahasiswaLayout from '../../components/MahasiswaLayout.vue';
 import attendanceService from '../../services/attendance';
-
-const router = useRouter();
-const user = ref(null);
 
 const isScanning = ref(true);
 const isLoading = ref(false);
 const cameraError = ref('');
 const successMessage = ref('');
 const apiError = ref('');
-
-onMounted(() => {
-  user.value = authService.getUser();
-});
+const manualMode = ref(false);
+const manualToken = ref('');
 
 const onDetect = async (detectedCodes) => {
-  // Grab the first code
   const code = detectedCodes[0];
   if (!code || !code.rawValue) return;
 
-  const barcodeToken = code.rawValue;
-  
-  // Pause scanning and start loading
+  submitToken(code.rawValue);
+};
+
+const handleManualSubmit = () => {
+  if (!manualToken.value.trim()) return;
+  submitToken(manualToken.value.trim());
+};
+
+const submitToken = async (token) => {
   isScanning.value = false;
   isLoading.value = true;
   successMessage.value = '';
   apiError.value = '';
 
   try {
-    const result = await attendanceService.recordAttendance(barcodeToken);
+    const result = await attendanceService.recordAttendance(token);
     successMessage.value = result.message || 'Kehadiran berhasil dicatat.';
   } catch (error) {
     apiError.value = error;
@@ -151,19 +192,19 @@ const onDetect = async (detectedCodes) => {
 
 const onCameraError = (error) => {
   console.error('Camera error:', error);
-  if (error.name === 'NotAllowedError') {
-    cameraError.value = 'Izin kamera ditolak. Silakan berikan izin kamera di browser Anda untuk memindai.';
-  } else if (error.name === 'NotFoundError') {
-    cameraError.value = 'Tidak ada kamera yang terdeteksi pada perangkat ini.';
-  } else if (error.name === 'NotSupportedError') {
-    cameraError.value = 'Browser Anda tidak mendukung pemindaian kamera di luar HTTPS/localhost.';
-  } else if (error.name === 'NotReadableError') {
-    cameraError.value = 'Kamera sedang digunakan oleh tab atau aplikasi lain.';
-  } else if (error.name === 'OverconstrainedError') {
-    cameraError.value = 'Spesifikasi kamera tidak mendukung pengaturan yang diminta.';
-  } else {
-    cameraError.value = error.message || 'Gagal memulai kamera.';
-  }
+  const messages = {
+    NotAllowedError: 'Izin kamera ditolak. Berikan izin akses kamera di browser Anda.',
+    NotFoundError: 'Tidak ada modul kamera yang terdeteksi di perangkat ini.',
+    NotSupportedError: 'Browser memerlukan koneksi HTTPS atau localhost untuk mengaktifkan kamera.',
+    NotReadableError: 'Kamera sedang digunakan oleh aplikasi lain.',
+    OverconstrainedError: 'Resolusi kamera tidak mendukung.',
+  };
+  cameraError.value = messages[error.name] ?? (error.message || 'Gagal memulai kamera.');
+};
+
+const toggleMode = () => {
+  manualMode.value = !manualMode.value;
+  resetScanner();
 };
 
 const resetScanner = () => {
@@ -171,10 +212,6 @@ const resetScanner = () => {
   successMessage.value = '';
   apiError.value = '';
   cameraError.value = '';
-};
-
-const handleLogout = () => {
-  authService.logout();
-  router.push('/login');
+  manualToken.value = '';
 };
 </script>
